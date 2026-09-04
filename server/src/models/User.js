@@ -30,6 +30,24 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+
+    cart: {
+      items: [
+        {
+          book: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Book",
+            required: true,
+          },
+
+          quantity: {
+            type: Number,
+            required: true,
+            min: [1, "Quantity must be at least 1"],
+          },
+        },
+      ],
+    },
   },
   {
     timestamps: true,
