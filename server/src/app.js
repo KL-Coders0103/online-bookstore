@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const env = require("./config/env");
 const authRoutes = require("./routes/authRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const bookRoutes = require("./routes/bookRoutes");
 const app = express();
 
 app.use(helmet());
@@ -11,6 +13,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/books", bookRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to the Online Bookstore API!' });
