@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
-import useAuth from "../context/useAuth";
+import useAuth from "../hooks/useAuth";
 import validateRegisterForm from "../validators/authValidator";
 
 const Register = () => {

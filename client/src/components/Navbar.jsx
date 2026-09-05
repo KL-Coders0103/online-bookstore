@@ -1,14 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
-import useAuth from "../context/useAuth";
+
+import useAuth from "../hooks/useAuth";
+import useCart from "../hooks/useCart";
 
 const Navbar = () => {
   const navigate = useNavigate();
+
   const { user, logout } = useAuth();
+  const { cart } = useCart();
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
+
+  const cartItemCount =
+    cart?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur">
@@ -53,9 +60,17 @@ const Navbar = () => {
             <>
               <Link
                 to="/cart"
-                className="hidden rounded-lg px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft hover:text-primary sm:block"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft hover:text-primary"
               >
-                Cart
+                <span className="inline-flex items-center gap-1.5">
+                  Cart
+
+                  {cartItemCount > 0 && (
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold leading-none text-white">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </span>
               </Link>
 
               <Link

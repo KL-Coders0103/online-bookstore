@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
-import useAuth from "../context/useAuth";
+import useAuth from "../hooks/useAuth";
 
 const Login = () => {
   const { user, login } = useAuth();
