@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/unauthorized";
 import Checkout from "./pages/Checkout";
+import OrderDetails from "./pages/OrderDetails";
 
 const ProfileTest = () => {
   return (
@@ -58,17 +59,10 @@ const App = () => {
           />
 
           <Route element={<ProtectedRoute />}>
-            <Route
-              path="/profile"
-              element={<ProfileTest />}
-            />
-
-            <Route
-              path="/cart"
-              element={<Cart />}
-            />
-
+            <Route path="/profile" element={<ProfileTest />} />
+            <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/orders/:id" element={<OrderDetails />} />
           </Route>
 
           <Route

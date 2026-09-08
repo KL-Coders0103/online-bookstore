@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const CartSummary = ({ items }) => {
+const CartSummary = ({ items, showCheckoutLink = true }) => {
   const subtotal = items.reduce((total, item) => {
     const price = Number(item.book?.price) || 0;
     const quantity = Number(item.quantity) || 0;
@@ -42,12 +42,14 @@ const CartSummary = ({ items }) => {
         </div>
       </div>
 
-      <Link
-        to="/checkout"
-        className="mt-6 block w-full rounded-lg bg-primary px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-      >
-        Proceed to Checkout
-      </Link>
+      {showCheckoutLink && (
+        <Link
+          to="/checkout"
+          className="mt-6 block w-full rounded-lg bg-primary px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+        >
+          Proceed to Checkout
+        </Link>
+      )}
     </aside>
   );
 };

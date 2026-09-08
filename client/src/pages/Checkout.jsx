@@ -1,10 +1,32 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import CartSummary from "../components/cart/CartSummary";
 import useCart from "../hooks/useCart";
+import { createOrder } from "../services/orderService";
 
 const Checkout = () => {
-  const { cart, loading, error } = useCart();
+  const navigate = useNavigate();
+
+  const {
+    cart,
+    loading,
+    error,
+    fetchCart,
+  } = useCart();
+
+  const [shippingAddress, setShippingAddress] = useState({
+    fullName: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "India",
+  });
+
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   if (loading) {
     return (
@@ -66,6 +88,101 @@ const Checkout = () => {
     );
   }
 
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setShippingAddress((currentAddress) => ({
+      ...currentAddress,
+      [name]: value,
+    }));
+
+    if (orderError) {
+      setOrderError("");
+    }
+  };
+
+  const validateShippingAddress = () => {
+    const requiredFields = [
+      ["fullName", "Full name"],
+      ["addressLine1", "Address"],
+      ["city", "City"],
+      ["state", "State"],
+      ["postalCode", "Postal code"],
+      ["country", "Country"],
+    ];
+
+    for (const [field, label] of requiredFields) {
+      if (!shippingAddress[field].trim()) {
+        return `${label} is required.`;
+      }
+    }
+
+    return "";
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (placingOrder) {
+      return;
+    }
+
+    setOrderError("");
+
+    const validationError = validateShippingAddress();
+
+    if (validationError) {
+      setOrderError(validationError);
+      return;
+    }
+
+    const orderItems = items
+      .filter((item) => item.book?._id)
+      .map((item) => ({
+        bookId: item.book._id,
+        quantity: item.quantity,
+      }));
+
+    if (orderItems.length === 0) {
+      setOrderError(
+        "Your cart does not contain any valid books. Please return to your cart."
+      );
+      return;
+    }
+
+    setPlacingOrder(true);
+
+    try {
+      const order = await createOrder({
+        items: orderItems,
+        shippingAddress: {
+          fullName: shippingAddress.fullName.trim(),
+          addressLine1: shippingAddress.addressLine1.trim(),
+          addressLine2: shippingAddress.addressLine2.trim(),
+          city: shippingAddress.city.trim(),
+          state: shippingAddress.state.trim(),
+          postalCode: shippingAddress.postalCode.trim(),
+          country: shippingAddress.country.trim(),
+        },
+      });
+
+      await fetchCart();
+
+      navigate(`/orders/${order._id}`, {
+        state: {
+          orderCreated: true,
+        },
+      });
+    } catch (err) {
+      setOrderError(
+        err.message ||
+          "Unable to place your order. Your cart has not been changed."
+      );
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div>
@@ -78,72 +195,193 @@ const Checkout = () => {
         </h1>
 
         <p className="mt-3 text-text-secondary">
-          Review your order before placing it.
+          Enter your shipping details and review your order.
         </p>
       </div>
 
-      <section className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-        <div className="rounded-xl border border-border bg-surface p-6 sm:p-8">
-          <h2 className="font-serif text-2xl font-bold text-primary">
-            Order Review
-          </h2>
+      <form
+        onSubmit={handleSubmit}
+        className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start"
+      >
+        <div className="space-y-8">
+          <section className="rounded-xl border border-border bg-surface p-6 sm:p-8">
+            <h2 className="font-serif text-2xl font-bold text-primary">
+              Shipping Address
+            </h2>
 
-          <div className="mt-6 divide-y divide-border">
-            {items.map((item) => {
-              const book = item.book;
-
-              if (!book) {
-                return null;
-              }
-
-              const price = Number(book.price) || 0;
-              const quantity = Number(item.quantity) || 0;
-              const lineTotal = price * quantity;
-
-              return (
-                <div
-                  key={book._id}
-                  className="flex gap-4 py-5 first:pt-0 last:pb-0"
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="fullName"
+                  className="text-sm font-semibold text-text"
                 >
-                  <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-soft">
-                    {book.coverImage ? (
-                      <img
-                        src={book.coverImage}
-                        alt={`Cover of ${book.title}`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center px-1 text-center font-serif text-xs font-semibold text-primary">
-                        {book.title}
-                      </div>
-                    )}
-                  </div>
+                  Full Name
+                </label>
 
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-serif text-lg font-bold text-primary">
-                      {book.title}
-                    </h3>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  value={shippingAddress.fullName}
+                  onChange={handleChange}
+                  required
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="Enter your full name"
+                />
+              </div>
 
-                    <p className="mt-1 text-sm text-text-secondary">
-                      {book.author}
-                    </p>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="addressLine1"
+                  className="text-sm font-semibold text-text"
+                >
+                  Address Line 1
+                </label>
 
-                    <p className="mt-2 text-sm text-text-secondary">
-                      ₹{price.toFixed(2)} × {quantity}
-                    </p>
-                  </div>
+                <input
+                  id="addressLine1"
+                  name="addressLine1"
+                  type="text"
+                  value={shippingAddress.addressLine1}
+                  onChange={handleChange}
+                  required
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="House no., street, area"
+                />
+              </div>
 
-                  <p className="shrink-0 text-sm font-semibold text-text">
-                    ₹{lineTotal.toFixed(2)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="addressLine2"
+                  className="text-sm font-semibold text-text"
+                >
+                  Address Line 2
+                  <span className="ml-1 font-normal text-text-secondary">
+                    (Optional)
+                  </span>
+                </label>
+
+                <input
+                  id="addressLine2"
+                  name="addressLine2"
+                  type="text"
+                  value={shippingAddress.addressLine2}
+                  onChange={handleChange}
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="Apartment, landmark, etc."
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="city"
+                  className="text-sm font-semibold text-text"
+                >
+                  City
+                </label>
+
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  value={shippingAddress.city}
+                  onChange={handleChange}
+                  required
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="City"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="state"
+                  className="text-sm font-semibold text-text"
+                >
+                  State
+                </label>
+
+                <input
+                  id="state"
+                  name="state"
+                  type="text"
+                  value={shippingAddress.state}
+                  onChange={handleChange}
+                  required
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="State"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="postalCode"
+                  className="text-sm font-semibold text-text"
+                >
+                  Postal Code
+                </label>
+
+                <input
+                  id="postalCode"
+                  name="postalCode"
+                  type="text"
+                  value={shippingAddress.postalCode}
+                  onChange={handleChange}
+                  required
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+                  placeholder="Postal code"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="country"
+                  className="text-sm font-semibold text-text"
+                >
+                  Country
+                </label>
+
+                <input
+                  id="country"
+                  name="country"
+                  type="text"
+                  value={shippingAddress.country}
+                  onChange={handleChange}
+                  required
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+                />
+              </div>
+            </div>
+          </section>
+
+          {orderError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {orderError}
+            </div>
+          )}
+
+          <Link
+            to="/cart"
+            className="inline-block text-sm font-semibold text-text-secondary transition-colors hover:text-primary"
+          >
+            ← Back to Cart
+          </Link>
         </div>
 
-        <CartSummary items={items} />
-      </section>
+        <div>
+          <CartSummary items={items} showCheckoutLink={false} />
+
+          <button
+            type="submit"
+            disabled={placingOrder}
+            className="mt-4 w-full rounded-lg bg-primary px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {placingOrder ? "Placing Order..." : "Place Order"}
+          </button>
+        </div>
+      </form>
     </main>
   );
 };
