@@ -13,15 +13,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/unauthorized";
 import Checkout from "./pages/Checkout";
 import OrderDetails from "./pages/OrderDetails";
-
-const ProfileTest = () => {
-  return (
-    <section>
-      <h1>Profile</h1>
-      <p>This is a protected page.</p>
-    </section>
-  );
-};
+import Profile from "./pages/Profile";
+import Orders from "./pages/Orders";
 
 const App = () => {
   return (
@@ -59,7 +52,8 @@ const App = () => {
           />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<ProfileTest />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path ="/orders" element={<Orders />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/orders/:id" element={<OrderDetails />} />

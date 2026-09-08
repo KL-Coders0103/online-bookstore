@@ -1,10 +1,44 @@
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
 
 import { getOrderById } from "../services/orderService";
+const getStatusInfo = (status) => {
+  switch (status) {
+    case "confirmed":
+      return {
+        label: "Confirmed",
+        classes: "bg-soft text-primary",
+      };
 
+    case "shipped":
+      return {
+        label: "Shipped",
+        classes: "bg-blue-50 text-blue-700",
+      };
+
+    case "delivered":
+      return {
+        label: "Delivered",
+        classes: "bg-green-50 text-green-700",
+      };
+
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        classes: "bg-red-50 text-red-700",
+      };
+
+    case "pending":
+    default:
+      return {
+        label: "Pending",
+        classes: "bg-soft text-text",
+      };
+  }
+};
 const OrderDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +59,7 @@ const OrderDetails = () => {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || "Unable to load order details.");
+          setError(err.message || "Unable to load this order.");
         }
       } finally {
         if (!cancelled) {
@@ -43,7 +77,7 @@ const OrderDetails = () => {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex min-h-[400px] items-center justify-center">
           <p className="text-sm text-text-secondary">
             Loading order details...
@@ -53,31 +87,30 @@ const OrderDetails = () => {
     );
   }
 
-  if (error) {
+  if (error || !order) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-xl border border-border bg-surface p-8 text-center">
+      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div
+          role="alert"
+          className="rounded-xl border border-border bg-surface p-8 text-center"
+        >
           <h1 className="font-serif text-2xl font-bold text-primary">
-            Unable to load order
+            Order not found
           </h1>
 
           <p className="mt-3 text-sm text-text-secondary">
-            {error}
+            {error || "We couldn't find the order you're looking for."}
           </p>
 
           <Link
-            to="/books"
+            to="/orders"
             className="mt-6 inline-block rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
           >
-            Continue Shopping
+            Back to My Orders
           </Link>
         </div>
       </main>
     );
-  }
-
-  if (!order) {
-    return null;
   }
 
   const orderDate = new Date(order.createdAt).toLocaleDateString(
@@ -89,162 +122,138 @@ const OrderDetails = () => {
     }
   );
 
+  const statusInfo = getStatusInfo(order.status);
+
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <section className="rounded-xl border border-border bg-surface px-6 py-10 text-center sm:px-10">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-soft">
-          <span
-            className="text-2xl font-bold text-primary"
-            aria-hidden="true"
-          >
-            ✓
-          </span>
-        </div>
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      {/* Back Navigation */}
+      <button
+        type="button"
+        onClick={() => navigate("/orders")}
+        className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-text-secondary transition-colors hover:text-primary"
+      >
+        <span aria-hidden="true">←</span>
+        Back to My Orders
+      </button>
 
-        <p className="mt-5 text-sm font-semibold uppercase tracking-wider text-accent">
-          Order placed successfully
-        </p>
+      {/* Order Header */}
+      <header className="rounded-xl border border-border bg-surface p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+              Order details
+            </p>
 
-        <h1 className="mt-2 font-serif text-4xl font-bold text-primary">
-          Thank you for your order
-        </h1>
+            <h1 className="mt-2 font-serif text-3xl font-bold text-primary sm:text-4xl">
+              Order #{order._id.slice(-8).toUpperCase()}
+            </h1>
 
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-text-secondary">
-          Your order has been placed successfully. You can find all
-          the details below.
-        </p>
-      </section>
+            <p className="mt-2 break-all font-mono text-xs text-text-secondary">
+              {order._id}
+            </p>
 
-      <section className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-        <div className="space-y-8">
-          <section className="rounded-xl border border-border bg-surface p-6 sm:p-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                  Order ID
-                </p>
-
-                <h2 className="mt-1 break-all font-mono text-sm font-semibold text-text">
-                  {order._id}
-                </h2>
-              </div>
-
-              <span className="w-fit rounded-full bg-soft px-3 py-1.5 text-xs font-semibold capitalize text-primary">
-                {order.status}
-              </span>
-            </div>
-
-            <div className="mt-6 border-t border-border pt-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                Order Date
-              </p>
-
-              <p className="mt-1 text-sm font-medium text-text">
-                {orderDate}
-              </p>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-border bg-surface p-6 sm:p-8">
-            <h2 className="font-serif text-2xl font-bold text-primary">
-              Items
-            </h2>
-
-            <div className="mt-6 divide-y divide-border">
-              {order.items.map((item, index) => {
-                const lineTotal = item.price * item.quantity;
-
-                return (
-                  <div
-                    key={`${item.book}-${index}`}
-                    className="flex items-start justify-between gap-6 py-5 first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <h3 className="font-serif text-lg font-bold text-primary">
-                        {item.title}
-                      </h3>
-
-                      <p className="mt-1 text-sm text-text-secondary">
-                        ₹{item.price.toFixed(2)} × {item.quantity}
-                      </p>
-                    </div>
-
-                    <p className="shrink-0 text-sm font-semibold text-text">
-                      ₹{lineTotal.toFixed(2)}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-border bg-surface p-6 sm:p-8">
-            <h2 className="font-serif text-2xl font-bold text-primary">
-              Shipping Address
-            </h2>
-
-            <div className="mt-5 text-sm leading-7 text-text-secondary">
-              <p className="font-semibold text-text">
-                {order.shippingAddress.fullName}
-              </p>
-
-              <p>{order.shippingAddress.addressLine1}</p>
-
-              {order.shippingAddress.addressLine2 && (
-                <p>{order.shippingAddress.addressLine2}</p>
-              )}
-
-              <p>
-                {order.shippingAddress.city},{" "}
-                {order.shippingAddress.state}{" "}
-                {order.shippingAddress.postalCode}
-              </p>
-
-              <p>{order.shippingAddress.country}</p>
-            </div>
-          </section>
-        </div>
-
-        <aside className="h-fit rounded-xl border border-border bg-surface p-6 lg:sticky lg:top-24">
-          <h2 className="font-serif text-2xl font-bold text-primary">
-            Order Summary
-          </h2>
-
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <span className="text-text-secondary">
-                Items
-              </span>
-
+            <p className="mt-3 text-sm text-text-secondary">
+              Placed on{" "}
               <span className="font-medium text-text">
-                {order.items.reduce(
-                  (total, item) => total + item.quantity,
-                  0
-                )}
+                {orderDate}
               </span>
-            </div>
-
-            <div className="border-t border-border pt-4">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-base font-semibold text-text">
-                  Total
-                </span>
-
-                <span className="text-xl font-bold text-primary">
-                  ₹{order.totalAmount.toFixed(2)}
-                </span>
-              </div>
-            </div>
+            </p>
           </div>
 
-          <Link
-            to="/books"
-            className="mt-6 block w-full rounded-lg bg-primary px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-          >
-            Continue Shopping
-          </Link>
-        </aside>
-      </section>
+          <span className={`w-fit rounded-full bg-soft px-3 py-1.5 text-xs font-semibold ${statusInfo.classes}`}>
+            {statusInfo.label}
+          </span>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        {/* Items */}
+        <section className="rounded-xl border border-border bg-surface p-6 sm:p-8">
+          <h2 className="font-serif text-2xl font-bold text-primary">
+            Items
+          </h2>
+
+          <div className="mt-6 divide-y divide-border">
+            {order.items.map((item) => (
+              <div
+                key={`${item.book}-${item.title}`}
+                className="flex flex-col gap-3 py-5 first:pt-0 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <h3 className="font-serif text-lg font-semibold text-text">
+                    {item.title}
+                  </h3>
+
+                  <p className="mt-1 text-sm text-text-secondary">
+                    ₹{Number(item.price).toFixed(2)} × {item.quantity}
+                  </p>
+                </div>
+
+                <p className="shrink-0 text-sm font-semibold text-primary">
+                  ₹
+                  {(Number(item.price) * Number(item.quantity)).toFixed(
+                    2
+                  )}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between border-t border-border pt-5">
+            <span className="font-semibold text-text">Total</span>
+
+            <span className="text-xl font-bold text-primary">
+              ₹{Number(order.totalAmount).toFixed(2)}
+            </span>
+          </div>
+        </section>
+
+        {/* Shipping */}
+        <section className="h-fit rounded-xl border border-border bg-surface p-6 sm:p-8">
+          <h2 className="font-serif text-2xl font-bold text-primary">
+            Shipping Address
+          </h2>
+
+          <div className="mt-5 space-y-1 text-sm leading-6 text-text-secondary">
+            <p className="font-semibold text-text">
+              {order.shippingAddress.fullName}
+            </p>
+
+            <p>{order.shippingAddress.addressLine1}</p>
+
+            {order.shippingAddress.addressLine2 && (
+              <p>{order.shippingAddress.addressLine2}</p>
+            )}
+
+            <p>
+              {order.shippingAddress.city},{" "}
+              {order.shippingAddress.state}
+            </p>
+
+            <p>{order.shippingAddress.postalCode}</p>
+
+            <p>{order.shippingAddress.country}</p>
+          </div>
+        </section>
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Link
+          to="/orders"
+          className="rounded-lg border border-border px-5 py-3 text-center text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
+        >
+          View All Orders
+        </Link>
+
+        <Link
+          to="/books"
+          className="rounded-lg bg-primary px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+        >
+          Continue Shopping
+        </Link>
+      </div>
     </main>
   );
 };
